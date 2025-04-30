@@ -1,9 +1,12 @@
 import boto3
 
+from app.models import Transaction
 
-async def get_transactions():
+db = boto3.resource('dynamodb')
+table = db.Table('Transactions')
 
-    db = boto3.resource('dynamodb')
-    table = db.Table('Transactions')
-
+async def get_transactions() -> list[Transaction]:
+    response = table.scan()
+    items = response.get('Items', [])
     
+    return [Transaction.model_validate(item) for item in items]
