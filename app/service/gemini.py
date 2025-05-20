@@ -12,7 +12,7 @@ class Gemini:
         ]
         response = self.client.models.generate_content(
             model=self.model_name,
-            contents=f"Given the list of transaction, create the list of transactions in the format of JSON. The list of transactions are: {enumerated_transactions}. There should be only one trasnsaction object per each transaction. The description of the transaction should be at most 50 characters.",
+            contents=f"Given the list of transaction, create the list of transactions in the format of JSON. The list of transactions are: {enumerated_transactions}. There should be only one trasnsaction object per each transaction. The description of the transaction should be at most 50 characters. Use the first element as an id",
             config={
                 "response_mime_type": "application/json",
                 "response_schema": list[Transaction],

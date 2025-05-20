@@ -1,17 +1,10 @@
-import base64
-import os
-import boto3
-from dotenv import load_dotenv
-from google.auth.transport.requests import Request
-from fastapi import FastAPI, HTTPException
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from fastapi import Depends, FastAPI
 from googleapiclient.discovery import build
-from app.models.DBResponse import DBResponse
+from app.api.dependencies import get_db, get_gemini_client
 from app.models.Transaction import Transaction
 from app.routers import transaction
-from google import genai
 
+from app.service.db import DB
 from app.service.gemini import Gemini
 from app.service.gmail_service import GmailService
 
@@ -19,43 +12,29 @@ from app.service.gmail_service import GmailService
 app = FastAPI()
 app.include_router(transaction.router)
 
-load_dotenv()
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+@app.get("/", response_model=list[Transaction])
+async def root(db: DB = Depends(get_db)):
+    return await db.get_all_transactions()
 
-gemini_client = Gemini(
-    client=genai.Client(api_key =  GEMINI_API_KEY))
-gmail_service = GmailService()
-
-db = boto3.resource('dynamodb', region_name='us-west-1')
-table = db.Table('Transactions')
-
-@app.get("/addTransaction")
-async def root():
+@app.get("/addTransaction", response_model=list[Transaction] | dict)
+async def addTransaction(db: DB = Depends(get_db), gmail_service: GmailService = Depends(GmailService), gemini_client: Gemini = Depends(get_gemini_client)):
     try:
         decoded_body_list = gmail_service.get_expense_emails()
 
         if decoded_body_list is None:
             return {"message": "No emails found or an error occurred."}
+        
+        existing_transactions = await db.get_all_transactions()
+        existing_transaction_ids = [transaction.id for transaction in existing_transactions]
+        transactions_to_add = [transaction[0] for transaction in decoded_body_list if transaction[0] not in existing_transaction_ids]
             
         # ask gemini to create transaction 
+        if not transactions_to_add: 
+            return {"message": "No new transactions to add."}
+        
+        print("new transactions found")
         transaction_list = gemini_client.get_transaction_from_gemini(decoded_body_list)
-
-        created_transaction_list = []
-
-        for transaction in transaction_list:
-            response = table.put_item(
-                Item=transaction.model_dump()
-            )
-
-            response_model = DBResponse.model_validate(response)
-            if response_model.ResponseMetadata.HTTPStatusCode != 200:
-                raise HTTPException(
-                    status_code=response_model.ResponseMetadata.HTTPStatusCode,
-                    detail="Failed to create transaction"
-                )
-            created_transaction_list.append(Transaction.model_validate(transaction.model_dump()))
-            
-        return created_transaction_list 
+        return await db.create_transaction_from_gmail(transaction_list)
     
     except Exception as error:
         print(f"An error occurred: {error}")
