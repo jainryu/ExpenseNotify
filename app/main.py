@@ -26,7 +26,7 @@ async def addTransaction(db: DB = Depends(get_db), gmail_service: GmailService =
         
         existing_transactions = await db.get_all_transactions()
         existing_transaction_ids = [transaction.id for transaction in existing_transactions]
-        transactions_to_add = [transaction[0] for transaction in decoded_body_list if transaction[0] not in existing_transaction_ids]
+        transactions_to_add = [transaction.id for transaction in decoded_body_list if transaction.id not in existing_transaction_ids]
             
         # ask gemini to create transaction 
         if not transactions_to_add: 

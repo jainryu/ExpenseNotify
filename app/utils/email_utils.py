@@ -10,16 +10,20 @@ def decode_emails(service, messages) -> list[Email]:
         parts = msg['payload']['parts']
         
         for part in parts:
-            nested_parts = part.get('parts')
+            text_part = None
+            nested_parts = part.get('parts', {})
             if not nested_parts:
                 if part['mimeType'] == 'text/plain':
-                    decoded_body_list.append(Email(msg_id, _decode_body(part)))
-            else:
-                # If there are nested parts, iterate through them
-                for part in nested_parts:
-                    if part['mimeType'] == 'text/plain':
-                        decoded_body_list.append(Email(msg_id, _decode_body(part)))
-                        break
+                    text_part = part
+
+            for part in nested_parts:
+                if part['mimeType'] == 'text/plain':
+                    text_part = part
+
+            if text_part:
+                text= _decode_body(part)
+                decoded_body_list.append(Email(id = msg_id, body = text))
+
     return decoded_body_list
 
 
