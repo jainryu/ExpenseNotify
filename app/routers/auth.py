@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.models.User import UserSignUp
+from app.models.auth import UserSignUp
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -11,4 +11,5 @@ async def login(username: str, email: str, password: str):
 
 @router.get("/signup")
 async def signup(user: UserSignUp):
+    
     pass
