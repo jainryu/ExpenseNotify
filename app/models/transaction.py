@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class Transaction(BaseModel):
-    id: str
+    user_id: str
+    transaction_id: str
     title: str
     date: str
     amount: str

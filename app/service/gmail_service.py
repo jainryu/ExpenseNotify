@@ -21,15 +21,18 @@ class GmailService:
             creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
         if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
+            try:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    raise Exception("Failed to refresh credentials: " + str(e))
+            except Exception as e:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     CLIENT_SECRET_FILE, SCOPES)
                 creds = flow.run_local_server(port=0)
 
-            with open("token.json", "w") as token:
-                token.write(creds.to_json())
+                with open("token.json", "w") as token:
+                    token.write(creds.to_json())
 
         try:
             service = build("gmail", "v1", credentials=creds)
@@ -42,3 +45,8 @@ class GmailService:
             return decoded_body_list
         except Exception as e:
             return None
+        
+    def logout(self):
+        if os.path.exists("token.json"):
+            os.remove("token.json")
+        print("Logged out successfully. Token file removed.")

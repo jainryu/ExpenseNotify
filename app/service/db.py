@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Key
 from fastapi import HTTPException
 
 from app.models.DBResponse import DBResponse
@@ -10,7 +11,7 @@ db = boto3.resource('dynamodb', region_name='us-west-1')
 class DB:
 
     def __init__(self):
-        self.table = db.Table('Transactions')
+        self.table = db.Table('Transaction')
 
     async def get_all_transactions(self) -> list[Transaction]:
         response = self.table.scan()
@@ -61,3 +62,12 @@ class DB:
             raise HTTPException(status_code=404, detail="Transaction not found")
         
         return Transaction.model_validate(item)
+    
+    async def get_transaction_by_user_id(self, user_id: str) -> list[Transaction]:
+        filtering_exp = Key('user_id').eq(user_id)
+        response = self.table.query(
+            KeyConditionExpression=filtering_exp
+        )
+        
+        items = response.get('Items', [])
+        return [Transaction.model_validate(item) for item in items]
