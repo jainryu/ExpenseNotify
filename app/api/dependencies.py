@@ -1,15 +1,20 @@
 import os
 from dotenv import load_dotenv
-from app.service.db import DB
+from app.service.transaction_db import DB
 from app.service.gemini import Gemini
 from app.service.gmail_service import GmailService
 from google import genai
+
+from app.service.user_db import UserDB
 
 
 load_dotenv()
 
 def get_db() -> DB:
     return DB()
+
+def get_user_db() -> DB:
+    return UserDB()
 
 def get_gmail_service() -> GmailService:
     return GmailService()

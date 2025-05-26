@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.api.dependencies import get_db
 from app.models.Transaction import Transaction
-from app.service.db import DB
+from app.service.transaction_db import DB
 
 router = APIRouter(
     prefix="/transactions",
