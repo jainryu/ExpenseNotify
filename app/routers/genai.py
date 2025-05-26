@@ -7,7 +7,7 @@ from app.service.gemini import Gemini
 from app.service.gmail_service import GmailService
 
 
-router = APIRouter(prefix="/genai")
+router = APIRouter(prefix="/genai", tags=["genai"])
 
 @router.get("/extract", response_model=list[Transaction] | dict)
 async def addTransaction(db: DB = Depends(get_db), gmail_service: GmailService = Depends(GmailService), gemini_client: Gemini = Depends(get_gemini_client)):

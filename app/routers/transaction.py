@@ -5,6 +5,7 @@ from app.service.db import DB
 
 router = APIRouter(
     prefix="/transactions",
+    tags=["transactions"],
 )
 
 @router.get("/", response_model=list[Transaction])
