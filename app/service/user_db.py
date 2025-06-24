@@ -10,38 +10,19 @@ class UserDB:
     def __init__(self):
         self.table = db.Table('User')
 
-    async def get_user_by_username(self, username: str) -> UserInDB | None:
+    async def get_user_by_userid(self, user_id: str) -> UserInDB | None:
 
-        response = await self.talbe.query(
-            IndexName='username-index',
-            KeyConditionExpression=Key('username').eq(username) & Key('SK').eq('RESERVED')
-        )
-        user = response.get('Items', [])
-        return UserInDB.model_validate(user[0]) if user else None
+        response = self.table.get_item(Key={'user_id': user_id})
+        user = response.get('Item')
+        return UserInDB.model_validate(user) if user else None
     
     async def create_user(self, user: UserInDB):
         try:
-            await self.table.put_item(
-                Item={"PK": f"USERNAME#{user.username}", "SK": "RESERVED"},
+            self.table.put_item(
+                Item=user.model_dump(),
                 ConditionExpression="attribute_not_exists(PK)"
             )
             
-            # 2. Reserve email
-            await self.table.put_item(
-                Item={"PK": f"EMAIL#{user.email}", "SK": "RESERVED"},
-                ConditionExpression="attribute_not_exists(PK)"
-            )
-
-            await self.table.put_item(
-                Item = {
-                    "PK": f"USER#{user.user_id}",
-                    "SK": "RESERVED",
-                    "username": user.username,
-                    "email": user.email,
-                    "hashed_password": user.hashed_password
-                }
-            )
-
         except ClientError as e:
             print("Error creating user:", e)
             raise e

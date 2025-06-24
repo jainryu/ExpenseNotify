@@ -13,7 +13,7 @@ class DB:
     def __init__(self):
         self.table = db.Table('Transaction')
 
-    async def get_all_transactions(self) -> list[Transaction]:
+    async def get_all_transactions(self, userid: str) -> list[Transaction]:
         response = self.table.scan()
         items = response.get('Items', [])
         
@@ -54,7 +54,7 @@ class DB:
 
     async def get_transaction(self, transaction_id: str) -> Transaction:
         response = self.table.get_item(
-            Key={'id': transaction_id}
+            Key={'user_id': 'jainryu', 'transaction_id': transaction_id}
         )
         
         item = response.get('Item')

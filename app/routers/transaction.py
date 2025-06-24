@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
 from app.models.Transaction import Transaction
+from app.models.auth import UserInDB
 from app.service.transaction_db import DB
 
 router = APIRouter(
@@ -9,13 +10,13 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=list[Transaction])
-async def get_all_transactions(db: DB = Depends(get_db)):
-    transaction_list = await db.get_all_transactions()
+async def get_all_transactions(user: UserInDB = Depends(get_current_user), db: DB = Depends(get_db)):
+    transaction_list = await db.get_all_transactions(userid = user.userid)
     return transaction_list
 
-@router.get("/user/{user_id}", response_model=list[Transaction])
-async def get_transaction_by_user_id(user_id: str, db: DB = Depends(get_db)):
-    transaction = await db.get_transaction_by_user_id(user_id=user_id)
+@router.get("/me", response_model=list[Transaction])
+async def get_transaction_by_user_id(user: UserInDB = Depends(get_current_user), db: DB = Depends(get_db)):
+    transaction = await db.get_transaction_by_user_id(user_id=user.user_id)
     return transaction
 
 @router.post("/create", response_model=Transaction, status_code=201)
