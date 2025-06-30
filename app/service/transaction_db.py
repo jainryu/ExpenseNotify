@@ -16,7 +16,7 @@ class DB:
 
     async def get_all_transactions(self, user_id: str) -> list[Transaction]:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
-            table = dynamodb.Table(TRANSACTION_TABLE)
+            table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
                 response = await table.scan()
                 items = response.get('Items', [])
@@ -26,7 +26,7 @@ class DB:
 
     async def create_transaction(self, transaction: Transaction) -> Transaction:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
-            table = dynamodb.Table(TRANSACTION_TABLE)
+            table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
                 response = await table.put_item(Item=transaction.model_dump())
                 response_model = DBResponse.model_validate(response)
@@ -46,7 +46,7 @@ class DB:
         created_transaction_list = []
 
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
-            table = dynamodb.Table(TRANSACTION_TABLE)
+            table = await dynamodb.Table(TRANSACTION_TABLE)
             for transaction in transaction_list:
                 try:
                     response = await table.put_item(Item=transaction.model_dump())
@@ -67,7 +67,7 @@ class DB:
 
     async def get_transaction(self, transaction_id: str, user_id: str) -> Transaction:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
-            table = dynamodb.Table(TRANSACTION_TABLE)
+            table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
                 response = await table.get_item(
                     Key={'user_id': user_id, 'transaction_id': transaction_id}
@@ -83,7 +83,7 @@ class DB:
 
     async def get_transaction_by_user_id(self, user_id: str) -> list[Transaction]:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
-            table = dynamodb.Table(TRANSACTION_TABLE)
+            table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
                 filtering_exp = Key('user_id').eq(user_id)
                 response = await table.query(KeyConditionExpression=filtering_exp)

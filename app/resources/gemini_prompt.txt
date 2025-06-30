@@ -1,4 +1,6 @@
 Given the list of transaction, create the list of transactions in the format of JSON. 
 The list of transactions are: {enumerated_transactions}. 
 There should be only one trasnsaction object per each transaction. The description of the transaction should be at most 50 characters. 
-Use the first element of each object as an transaction_id and jainryu will be an user_id.
+Use the first element of each object as an transaction_id and {user_id} will be an user_id.
+The status will be False by default.
+And for the date we follow 02/05/2025 format.
