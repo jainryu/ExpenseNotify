@@ -24,20 +24,15 @@ class DB:
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
-    async def create_transaction(self, transaction: Transaction) -> Transaction:
+    async def create_transaction(self, transactions: list[Transaction]):
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
             table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
-                response = await table.put_item(Item=transaction.model_dump())
-                response_model = DBResponse.model_validate(response)
+                async with table.batch_writer() as batch:
+                    for tx in transactions:
+                        await batch.put_item(Item=tx.model_dump())
 
-                if response_model.ResponseMetadata.HTTPStatusCode != 200:
-                    raise HTTPException(
-                        status_code=response_model.ResponseMetadata.HTTPStatusCode,
-                        detail="Failed to create transaction"
-                    )
-
-                return Transaction.model_validate(transaction.model_dump())
+                return [Transaction.model_validate(tx.model_dump()) for tx in transactions]
 
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
@@ -58,7 +53,8 @@ class DB:
                             detail="Failed to create transaction"
                         )
 
-                    created_transaction_list.append(Transaction.model_validate(transaction.model_dump()))
+                    created_transaction_list.append(
+                        Transaction.model_validate(transaction.model_dump()))
 
                 except ClientError as e:
                     raise HTTPException(status_code=500, detail=str(e))
@@ -74,7 +70,8 @@ class DB:
                 )
                 item = response.get('Item')
                 if not item:
-                    raise HTTPException(status_code=404, detail="Transaction not found")
+                    raise HTTPException(
+                        status_code=404, detail="Transaction not found")
 
                 return Transaction.model_validate(item)
 
@@ -89,6 +86,21 @@ class DB:
                 response = await table.query(KeyConditionExpression=filtering_exp)
                 items = response.get('Items', [])
                 return [Transaction.model_validate(item) for item in items]
+
+            except ClientError as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+    async def delete_transaction(self, transaction_id: str, user_id: str):
+        async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
+            table = await dynamodb.Table(TRANSACTION_TABLE)
+            try:
+                response = await table.delete_item(
+                    Key={'user_id': user_id, 'transaction_id': transaction_id}
+                )
+                if response.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+                    raise HTTPException(
+                        status_code=404, detail="Transaction not found or could not be deleted"
+                    )
 
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
