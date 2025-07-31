@@ -1,6 +1,6 @@
 import json
-from app.models.Email import Email
-from app.models.Transaction import TransactionDB
+from app.models.email import Email
+from app.models.transaction import TransactionDB
 from app.models.auth import UserInDB
 from app.utils.prompt_utils import read_prompt
 
