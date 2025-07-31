@@ -7,7 +7,7 @@ import aioboto3
 from fastapi import HTTPException
 
 from app.models.DBResponse import DBResponse
-from app.models.Transaction import Transaction, TransactionDB
+from app.models.transaction import Transaction, TransactionDB
 
 DYNAMODB_REGION = 'us-west-1'
 TRANSACTION_TABLE = 'Transaction'

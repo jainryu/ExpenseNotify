@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_db, get_gemini_client
-from app.models.Transaction import TransactionDB
+from app.models.transaction import TransactionDB
 from app.models.auth import UserInDB
 from app.routers.auth import get_current_user
 from app.service.transaction_db import DB
