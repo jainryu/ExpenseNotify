@@ -1,14 +1,16 @@
 import base64
 
-from app.models.Email import Email
+from app.models.email import Email
+
 
 def decode_emails(service, messages) -> list[Email]:
     decoded_body_list = []
     for message in messages:
         msg_id = message['id']
-        msg = service.users().messages().get(userId="me", id=msg_id, format='full').execute()
+        msg = service.users().messages().get(
+            userId="me", id=msg_id, format='full').execute()
         parts = msg['payload']['parts']
-        
+
         for part in parts:
             text_part = None
             nested_parts = part.get('parts', {})
@@ -21,8 +23,8 @@ def decode_emails(service, messages) -> list[Email]:
                     text_part = part
 
             if text_part:
-                text= _decode_body(part)
-                decoded_body_list.append(Email(id = msg_id, body = text))
+                text = _decode_body(part)
+                decoded_body_list.append(Email(id=msg_id, body=text))
 
     return decoded_body_list
 
@@ -32,5 +34,3 @@ def _decode_body(part) -> str:
     byte_code = base64.urlsafe_b64decode(data)
     text = byte_code.decode("utf-8")
     return text
-
-
