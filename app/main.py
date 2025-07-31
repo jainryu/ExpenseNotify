@@ -17,7 +17,9 @@ app.include_router(auth.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your frontend's origin
+    # your frontend's origin
+    allow_origins=["http://localhost:5173",
+                   "https://expense-notify-fe-f3uc.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
