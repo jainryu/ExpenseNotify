@@ -24,13 +24,13 @@ class DB:
     def __init__(self):
         self.session = aioboto3.Session()
 
-    async def get_all_transactions(self, user_id: str) -> list[Transaction]:
+    async def get_all_transactions(self, user_id: str) -> list[TransactionDB]:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
             table = await dynamodb.Table(TRANSACTION_TABLE)
             try:
                 response = await table.scan()
                 items = response.get('Items', [])
-                return [Transaction.model_validate(item) for item in items]
+                return [TransactionDB.model_validate(item) for item in items]
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
@@ -57,7 +57,7 @@ class DB:
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
-    async def create_transaction_from_gmail(self, transaction_list: list[Transaction]):
+    async def create_transaction_from_gmail(self, transaction_list: list[TransactionDB]):
         created_transaction_list = []
 
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
@@ -74,7 +74,7 @@ class DB:
                         )
 
                     created_transaction_list.append(
-                        Transaction.model_validate(transaction.model_dump()))
+                        TransactionDB.model_validate(transaction.model_dump()))
 
                 except ClientError as e:
                     raise HTTPException(status_code=500, detail=str(e))
