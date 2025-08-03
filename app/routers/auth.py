@@ -1,18 +1,27 @@
 import os
 from typing import Annotated
 from dotenv import load_dotenv
-from fastapi import APIRouter, FastAPI, HTTPException, Depends
+from fastapi import APIRouter, FastAPI, HTTPException, Depends, Request
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 import jwt
 from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
+from google_auth_oauthlib.flow import Flow
 
-from app.api.dependencies import get_user_db
+
+from app.api.dependencies import get_db, get_user_db
 from app.models.auth import UserInDB
+from app.service.transaction_db import DB
 from app.service.user_db import UserDB
+from app.utils.encrytion_utils import encrypt_credentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+load_dotenv()
+CLIENT_SECRET_FILE = os.getenv('CLIENT_SECRET_FILE')
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+REDIRECT_URI = "http://localhost:8000/auth/google-callback"
 
 
 load_dotenv()
@@ -67,6 +76,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: UserDB = Dep
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
+async def get_current_user_from_token(token: str, db: UserDB) -> UserInDB:
+    try:
+        payload = jwt.decode(token, TOKEN_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = await db.get_user_by_userid(user_id=user_id)
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 @router.post("/signup", status_code=201)
 async def signup(user_in: User,  db: UserDB = Depends(get_user_db)):
     user = await db.get_user_by_userid(user_id=user_in.user_id)
@@ -94,3 +117,55 @@ async def read_users_me(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
 ):
     return current_user.user_id
+
+
+@router.get("/google-login")
+async def google_login(request: Request, db: UserDB = Depends(get_user_db)):
+    token = request.query_params.get("token")
+    if not token:
+        raise HTTPException(status_code=400, detail="Token missing")
+
+    user = await get_current_user_from_token(token, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRET_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+
+    auth_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+        state=token
+    )
+    return RedirectResponse(auth_url)
+
+
+@router.get("/google-callback")
+async def google_callback(request: Request, db: UserDB = Depends(get_user_db)):
+    code = request.query_params.get("code")
+    token = request.query_params.get("state")
+
+    user = await get_current_user_from_token(token, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRET_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    flow.fetch_token(code=code)
+    credentials = flow.credentials
+
+    await db.update_user_credentials(
+        user_id=user.user_id,
+        google_credentials=encrypt_credentials(credentials.to_json())
+    )
+
+    # Redirect user back to your frontend, optionally with a success query param
+    frontend_url = "http://localhost:5173/google-link-success?status=success"
+    return RedirectResponse(frontend_url)

@@ -28,3 +28,16 @@ class UserDB:
             except ClientError as e:
                 print("Error creating user:", e)
                 raise e
+
+    async def update_user_credentials(self, user_id: str, google_credentials: str):
+        async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
+            table = await dynamodb.Table(USER_TABLE_NAME)
+            try:
+                await table.update_item(
+                    Key={"user_id": user_id},
+                    UpdateExpression="SET google_credentials = :val",
+                    ExpressionAttributeValues={":val": google_credentials}
+                )
+            except ClientError as e:
+                print("Error updating user credentials:", e)
+                raise e

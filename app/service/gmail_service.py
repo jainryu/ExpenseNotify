@@ -16,27 +16,12 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 class GmailService:
 
+    def __init__(self, creds: Credentials):
+        self.creds = creds
+
     def get_expense_emails(self) -> list[Email] | None:
-        creds = None
-        if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
-
-        if not creds or not creds.valid:
-            try:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    raise Exception("Failed to refresh credentials: " + str(e))
-            except Exception as e:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    CLIENT_SECRET_FILE, SCOPES)
-                creds = flow.run_local_server(port=0)
-
-                with open("token.json", "w") as token:
-                    token.write(creds.to_json())
-
         try:
-            service = build("gmail", "v1", credentials=creds)
+            service = build("gmail", "v1", credentials=self.creds)
 
             results = service.users().messages().list(userId="me", labelIds=[
                 "Label_2311038950946628504"], maxResults=10).execute()
