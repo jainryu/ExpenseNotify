@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import Annotated
 from dotenv import load_dotenv
@@ -19,7 +20,12 @@ from app.utils.encrytion_utils import encrypt_credentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 load_dotenv()
-CLIENT_SECRET_FILE = os.getenv('CLIENT_SECRET_FILE')
+b64_creds = os.getenv("GOOGLE_CREDENTIALS_B64")
+decoded = base64.b64decode(b64_creds)
+
+with open("temp_credentials.json", "wb") as f:
+    f.write(decoded)
+
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 REDIRECT_URI = "https://expensenotify.onrender.com/auth/google-callback"
 
@@ -130,7 +136,7 @@ async def google_login(request: Request, db: UserDB = Depends(get_user_db)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRET_FILE,
+        "temp_credentials.json",
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -154,7 +160,7 @@ async def google_callback(request: Request, db: UserDB = Depends(get_user_db)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRET_FILE,
+        "temp_credentials.json",
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
