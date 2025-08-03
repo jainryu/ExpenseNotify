@@ -21,7 +21,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 load_dotenv()
 CLIENT_SECRET_FILE = os.getenv('CLIENT_SECRET_FILE')
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-REDIRECT_URI = "http://localhost:8000/auth/google-callback"
+REDIRECT_URI = "https://expensenotify.onrender.com/auth/google-callback"
 
 
 load_dotenv()
@@ -166,6 +166,5 @@ async def google_callback(request: Request, db: UserDB = Depends(get_user_db)):
         google_credentials=encrypt_credentials(credentials.to_json())
     )
 
-    # Redirect user back to your frontend, optionally with a success query param
-    frontend_url = "http://localhost:5173/google-link-success?status=success"
+    frontend_url = "https://expense-notify-fe-f3uc.vercel.app//google-link-success?status=success"
     return RedirectResponse(frontend_url)
