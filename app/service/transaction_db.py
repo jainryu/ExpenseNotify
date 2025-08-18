@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import random
 import string
 from aiohttp import ClientError
@@ -7,7 +8,9 @@ import aioboto3
 from fastapi import HTTPException
 
 from app.models.DBResponse import DBResponse
+from app.models.sns import ExpenseEventType
 from app.models.transaction import Transaction, TransactionDB
+from app.service.sns import EventBus
 
 DYNAMODB_REGION = 'us-west-1'
 TRANSACTION_TABLE = 'Transaction'
@@ -23,6 +26,7 @@ def generate_transaction_id(user_id: str) -> str:
 class DB:
     def __init__(self):
         self.session = aioboto3.Session()
+        self.event_bus = EventBus()
 
     async def get_all_transactions(self, user_id: str) -> list[TransactionDB]:
         async with self.session.resource("dynamodb", region_name=DYNAMODB_REGION) as dynamodb:
@@ -51,6 +55,9 @@ class DB:
                         status_code=response_model.ResponseMetadata.HTTPStatusCode,
                         detail="Failed to create transaction"
                     )
+
+                # Publish event to SNS
+                await self.event_bus.publish_event(json.dumps(transaction.model_dump()), ExpenseEventType.EXPENSE_CREATED)
 
                 return TransactionDB.model_validate(tx_db.model_dump())
 
@@ -121,6 +128,8 @@ class DB:
                     raise HTTPException(
                         status_code=404, detail="Transaction not found or could not be deleted"
                     )
+                # Publish event to SNS
+                await self.event_bus.publish_event(transaction_id, ExpenseEventType.EXPENSE_DELETED)
 
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=str(e))
