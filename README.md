@@ -28,6 +28,7 @@ The app demonstrates modern backend patterns with authentication, event-driven d
 - AWS Lambda (event consumers)
 - Google OAuth (Gmail API)
 - Gemini (Google Generative AI) for parsing transactions
+- [Render](https://render.com/) for hosting
 
 **Frontend**
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
