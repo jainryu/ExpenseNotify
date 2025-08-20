@@ -3,3 +3,5 @@ __pycache__/main.cpython-313.pyc
 .env
 credentials.json
 token.json
+temp_credentials.json
+credentials.b64

@@ -36,3 +36,7 @@ The app demonstrates modern backend patterns with authentication, event-driven d
 - Consumes the FastAPI backend via REST APIs
 - Provides authentication, expense dashboard, Gmail linking
 - [Github Link](https://github.com/jainryu/ExpenseNotifyFE)
+
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115.12-green?logo=fastapi)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
