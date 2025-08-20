@@ -34,3 +34,4 @@ The app demonstrates modern backend patterns with authentication, event-driven d
 - [Vercel](https://vercel.com/) for hosting
 - Consumes the FastAPI backend via REST APIs
 - Provides authentication, expense dashboard, Gmail linking
+- [Github Link](https://github.com/jainryu/ExpenseNotifyFE)
