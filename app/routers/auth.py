@@ -114,7 +114,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: UserDB = D
     user = await db.get_user_by_userid(user_id=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token(data={"sub": user.user_id})
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    token = create_access_token(
+        data={"sub": user.user_id}, expires_delta=access_token_expires)
     return Token(access_token=token, token_type="bearer")
 
 
